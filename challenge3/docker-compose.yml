@@ -1,35 +1,37 @@
 version: '3.8'
 
 volumes:
-  data:
+  db-data:
+
 services:
   db:
-    build: ./db
-    image: mariadb
+    build: 
+      context: ./db
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: mydatabase
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - data:/var/lib/mysql
+      - db-data:/var/lib/mysql
     ports:
       - "3306:3306"
+
+  node-service:
+    build: ./api
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - db
+
   nginx:
     build: ./nginx
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
-      - api
-  api:
-    build: ./api
-    environment:
-      - DB_HOST=db
-      - DB_USERNAME=root
-      - DB_PASSWORD=example
-      - DB_DATABASE=mydb
-      - PORT=3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
+      - node-service
